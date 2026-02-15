@@ -19,11 +19,11 @@ const createOrder = async (req, res) => {
         }
 
         // Validate customer details
-        if (!customer || !customer.name || !customer.phone || !customer.address || !customer.city || !customer.pincode) {
+        if (!customer || !customer.name || !customer.phone || !customer.address || !customer.city || !customer.pincode || !customer.email) {
             await transaction.rollback();
             return res.status(400).json({
                 success: false,
-                message: 'All customer details are required (Name, Phone, Address, City, Pincode)'
+                message: 'All customer details are required (Name, Email, Phone, Address, City, Pincode)'
             });
         }
 
@@ -180,8 +180,65 @@ const updatePaymentStatus = async (req, res) => {
     }
 };
 
+// Get user orders by email or phone
+const getUserOrders = async (req, res) => {
+    try {
+        const { email, phone } = req.query;
+
+        if (!email && !phone) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email or phone number is required'
+            });
+        }
+
+        // Build query to find orders by customer email or phone
+        const { Op } = require('sequelize');
+        const whereConditions = [];
+
+        if (email) {
+            whereConditions.push({
+                'customer.email': email
+            });
+        }
+
+        if (phone) {
+            whereConditions.push({
+                'customer.phone': phone
+            });
+        }
+
+        const orders = await Order.findAll({
+            where: {
+                [Op.or]: whereConditions.map(condition =>
+                    sequelize.where(
+                        sequelize.cast(sequelize.col('customer'), 'text'),
+                        {
+                            [Op.like]: `%${Object.values(condition)[0]}%`
+                        }
+                    )
+                )
+            },
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.json({
+            success: true,
+            data: orders
+        });
+    } catch (error) {
+        console.error('Get user orders error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching orders',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createOrder,
     getOrderById,
-    updatePaymentStatus
+    updatePaymentStatus,
+    getUserOrders
 };

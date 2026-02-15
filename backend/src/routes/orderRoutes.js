@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createOrder, getOrderById, updatePaymentStatus } = require('../controllers/orderController');
+const { createOrder, getOrderById, updatePaymentStatus, getUserOrders } = require('../controllers/orderController');
 
 /**
  * @swagger
@@ -51,6 +51,31 @@ const { createOrder, getOrderById, updatePaymentStatus } = require('../controlle
  *         description: Invalid request
  */
 router.post('/', createOrder);
+
+/**
+ * @swagger
+ * /api/orders/user:
+ *   get:
+ *     summary: Get user orders by email or phone
+ *     tags: [Orders]
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         schema:
+ *           type: string
+ *         description: Customer email
+ *       - in: query
+ *         name: phone
+ *         schema:
+ *           type: string
+ *         description: Customer phone number
+ *     responses:
+ *       200:
+ *         description: List of user orders
+ *       400:
+ *         description: Email or phone is required
+ */
+router.get('/user', getUserOrders);
 
 /**
  * @swagger

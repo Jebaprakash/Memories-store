@@ -81,6 +81,7 @@ export const ordersAPI = {
     getById: (id) => api.get(`/orders/${id}`),
     updatePaymentStatus: (orderId, paymentStatus) =>
         api.patch(`/orders/${orderId}/payment-status`, { paymentStatus }),
+    getUserOrders: (params) => api.get('/orders/user', { params }),
 };
 
 // Admin API
