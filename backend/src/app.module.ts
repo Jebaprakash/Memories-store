@@ -22,16 +22,38 @@ import { SharedModule } from './shared/shared.module';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USER'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
-        entities: [Product, User, Admin, Order],
-        synchronize: false, // Set to false in production
-      }),
+      useFactory: (configService: ConfigService) => {
+        const url = configService.get<string>('DATABASE_URL');
+        const isProd = configService.get<string>('NODE_ENV') === 'production';
+
+        if (url) {
+          return {
+            type: 'postgres',
+            url,
+            entities: [Product, User, Admin, Order],
+            synchronize: true, // Temporary fix for new database
+            ssl: {
+              rejectUnauthorized: false,
+            },
+            extra: {
+              ssl: {
+                rejectUnauthorized: false,
+              },
+            },
+          };
+        }
+
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST'),
+          port: configService.get<number>('DB_PORT'),
+          username: configService.get<string>('DB_USER'),
+          password: configService.get<string>('DB_PASSWORD'),
+          database: configService.get<string>('DB_NAME'),
+          entities: [Product, User, Admin, Order],
+          synchronize: true,
+        };
+      },
       inject: [ConfigService],
     }),
     ProductsModule,
