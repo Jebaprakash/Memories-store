@@ -7,7 +7,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 
 @ApiTags('Orders')
-@Controller('api/orders')
+@Controller('orders')
 export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 

@@ -22,7 +22,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 
 @ApiTags('Admin')
-@Controller('api/admin')
+@Controller('admin')
 export class AdminController {
     constructor(
         private readonly adminService: AdminService,

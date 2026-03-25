@@ -5,7 +5,7 @@ import { LocalAuthGuard } from '../../shared/guards/local-auth.guard';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 
 @ApiTags('Users')
-@Controller('api/users')
+@Controller('users')
 export class AuthController {
     constructor(private authService: AuthService) { }
 
