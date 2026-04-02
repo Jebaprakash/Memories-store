@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { SharedModule } from './shared/shared.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -23,9 +24,31 @@ import { SharedModule } from './shared/shared.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const url = configService.get<string>('DATABASE_URL');
+        let url = configService.get<string>('DATABASE_URL');
 
         if (url) {
+          // Fix for Neon DB "Tenant or user not found" SNI error
+          if (url.includes('neon.tech') && !url.includes('options=project')) {
+            try {
+              const parsedUrl = new URL(url);
+              const endpointId = parsedUrl.hostname.split('.')[0];
+              parsedUrl.searchParams.set('options', `project=${endpointId}`);
+              url = parsedUrl.toString();
+            } catch (error) {
+              console.warn('Could not parse DATABASE_URL for Neon options fix');
+            }
+          }
+
+          // Fix for Supabase pooler - ensure using session mode (port 6543)
+          if (url.includes('supabase.com') && url.includes(':5432')) {
+            try {
+              console.warn('⚠️  Supabase connection detected with port 5432. Switching to session mode (port 6543) for better compatibility.');
+              url = url.replace(':5432', ':6543');
+            } catch (error) {
+              console.warn('Could not adjust Supabase port');
+            }
+          }
+
           return {
             type: 'postgres',
             url,
@@ -62,6 +85,7 @@ import { SharedModule } from './shared/shared.module';
     AuthModule,
     OrdersModule,
     AdminModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
