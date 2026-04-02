@@ -10,17 +10,16 @@ import {
     Query,
     UseGuards,
     UseInterceptors,
-    UploadedFile,
+    UploadedFiles,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { AdminService } from './admin.service';
 import { ProductsService } from '../products/products.service';
 import { OrdersService } from '../orders/orders.service';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -51,20 +50,25 @@ export class AdminController {
     @Post('products')
     @ApiOperation({ summary: 'Create a new product' })
     @UseInterceptors(
-        FileInterceptor('image', {
+        FilesInterceptor('images', 5, {
             storage: memoryStorage(),
         }),
     )
-    async createProduct(@Body() productData: any, @UploadedFile() file: any) {
-        let imageUrl = '';
-        if (file) {
-            imageUrl = await this.cloudinaryService.uploadImage(file);
+    async createProduct(@Body() productData: any, @UploadedFiles() files: any[]) {
+        const imageUrls: string[] = [];
+        if (files && files.length > 0) {
+            for (const file of files) {
+                const url = await this.cloudinaryService.uploadImage(file);
+                imageUrls.push(url);
+            }
         }
+
+        const mainImage = imageUrls.length > 0 ? imageUrls[0] : '';
 
         return this.productsService.create({
             ...productData,
-            image_url: imageUrl,
-            images: imageUrl ? [imageUrl] : [],
+            image_url: mainImage,
+            images: imageUrls,
             price: parseFloat(productData.price),
             stockQty: parseInt(productData.stockQty, 10),
             isActive: productData.isActive === 'true' || productData.isActive === true,
@@ -76,25 +80,28 @@ export class AdminController {
     @Put('products/:id')
     @ApiOperation({ summary: 'Update a product' })
     @UseInterceptors(
-        FileInterceptor('image', {
+        FilesInterceptor('images', 5, {
             storage: memoryStorage(),
         }),
     )
     async updateProduct(
         @Param('id') id: string,
         @Body() productData: any,
-        @UploadedFile() file: any,
+        @UploadedFiles() files: any[],
     ) {
-        let imageUrl = productData.image_url;
-
-        if (file) {
-            imageUrl = await this.cloudinaryService.uploadImage(file);
+        const imageUrls: string[] = [];
+        if (files && files.length > 0) {
+            for (const file of files) {
+                const url = await this.cloudinaryService.uploadImage(file);
+                imageUrls.push(url);
+            }
         }
 
         const updateData: any = { ...productData };
-        if (imageUrl) {
-            updateData.image_url = imageUrl;
-            updateData.images = [imageUrl];
+        
+        if (imageUrls.length > 0) {
+            updateData.image_url = imageUrls[0];
+            updateData.images = imageUrls;
         }
 
         if (productData.price) updateData.price = parseFloat(productData.price);
