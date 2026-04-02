@@ -10,7 +10,7 @@ import {
     Query,
     UseGuards,
     UseInterceptors,
-    UploadedFiles,
+    UploadedFile,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -18,8 +18,9 @@ import { AdminService } from './admin.service';
 import { ProductsService } from '../products/products.service';
 import { OrdersService } from '../orders/orders.service';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { CloudinaryService } from '../../cloudinary/cloudinary.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -28,6 +29,7 @@ export class AdminController {
         private readonly adminService: AdminService,
         private readonly productsService: ProductsService,
         private readonly ordersService: OrdersService,
+        private readonly cloudinaryService: CloudinaryService,
     ) { }
 
     @Post('login')
@@ -49,24 +51,20 @@ export class AdminController {
     @Post('products')
     @ApiOperation({ summary: 'Create a new product' })
     @UseInterceptors(
-        FilesInterceptor('images', 5, {
-            storage: diskStorage({
-                destination: './uploads/products',
-                filename: (req, file, cb) => {
-                    const randomName = Array(32)
-                        .fill(null)
-                        .map(() => Math.round(Math.random() * 16).toString(16))
-                        .join('');
-                    return cb(null, `${randomName}${extname(file.originalname)}`);
-                },
-            }),
+        FileInterceptor('image', {
+            storage: memoryStorage(),
         }),
     )
-    async createProduct(@Body() productData: any, @UploadedFiles() files: Array<Express.Multer.File>) {
-        const images = files ? files.map((file) => `/uploads/products/${file.filename}`) : [];
+    async createProduct(@Body() productData: any, @UploadedFile() file: any) {
+        let imageUrl = '';
+        if (file) {
+            imageUrl = await this.cloudinaryService.uploadImage(file);
+        }
+
         return this.productsService.create({
             ...productData,
-            images,
+            image_url: imageUrl,
+            images: imageUrl ? [imageUrl] : [],
             price: parseFloat(productData.price),
             stockQty: parseInt(productData.stockQty, 10),
             isActive: productData.isActive === 'true' || productData.isActive === true,
@@ -78,28 +76,27 @@ export class AdminController {
     @Put('products/:id')
     @ApiOperation({ summary: 'Update a product' })
     @UseInterceptors(
-        FilesInterceptor('images', 5, {
-            storage: diskStorage({
-                destination: './uploads/products',
-                filename: (req, file, cb) => {
-                    const randomName = Array(32)
-                        .fill(null)
-                        .map(() => Math.round(Math.random() * 16).toString(16))
-                        .join('');
-                    return cb(null, `${randomName}${extname(file.originalname)}`);
-                },
-            }),
+        FileInterceptor('image', {
+            storage: memoryStorage(),
         }),
     )
     async updateProduct(
         @Param('id') id: string,
         @Body() productData: any,
-        @UploadedFiles() files: Array<Express.Multer.File>,
+        @UploadedFile() file: any,
     ) {
-        const updateData: any = { ...productData };
-        if (files && files.length > 0) {
-            updateData.images = files.map((file) => `/uploads/products/${file.filename}`);
+        let imageUrl = productData.image_url;
+
+        if (file) {
+            imageUrl = await this.cloudinaryService.uploadImage(file);
         }
+
+        const updateData: any = { ...productData };
+        if (imageUrl) {
+            updateData.image_url = imageUrl;
+            updateData.images = [imageUrl];
+        }
+
         if (productData.price) updateData.price = parseFloat(productData.price);
         if (productData.stockQty) updateData.stockQty = parseInt(productData.stockQty, 10);
         if (productData.isActive !== undefined) {
@@ -114,6 +111,13 @@ export class AdminController {
     @Delete('products/:id')
     @ApiOperation({ summary: 'Delete a product' })
     async deleteProduct(@Param('id') id: string) {
+        const productResponse = await this.productsService.findOne(id);
+        const product = productResponse.data;
+        if (product && product.image_url) {
+            await this.cloudinaryService.deleteImage(product.image_url);
+        } else if (product && product.images && product.images.length > 0) {
+            await this.cloudinaryService.deleteImage(product.images[0]);
+        }
         return this.productsService.delete(id);
     }
 

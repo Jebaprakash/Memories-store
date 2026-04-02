@@ -109,12 +109,14 @@ export class ProductsService {
             throw new NotFoundException('Product not found');
         }
 
-        // Delete images
+        // Delete images (only local ones)
         if (product.images && product.images.length > 0) {
             product.images.forEach((imagePath) => {
-                const fullPath = path.join(process.cwd(), imagePath);
-                if (fs.existsSync(fullPath)) {
-                    fs.unlinkSync(fullPath);
+                if (!imagePath.startsWith('http')) {
+                    const fullPath = path.join(process.cwd(), imagePath);
+                    if (fs.existsSync(fullPath)) {
+                        fs.unlinkSync(fullPath);
+                    }
                 }
             });
         }

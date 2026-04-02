@@ -15,16 +15,13 @@ export class CloudinaryService {
     return new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
-          { folder: 'memeories-store' },
+          {
+            folder: 'memeories-store',
+            resource_type: 'image',
+          },
           (error, result) => {
-            if (error) {
-              return reject(error);
-            }
-            if (result && result.secure_url) {
-              resolve(result.secure_url);
-            } else {
-              reject(new Error('Upload failed: result or secure_url is undefined'));
-            }
+            if (error) reject(error);
+            else resolve(result && result.secure_url ? result.secure_url : '');
           },
         )
         .end(file.buffer);
@@ -32,12 +29,15 @@ export class CloudinaryService {
   }
 
   async deleteImage(imageUrl: string): Promise<void> {
-    const parts = imageUrl.split('/');
-    const lastPart = parts.pop();
-    if (!lastPart) {
-      throw new Error('Invalid image URL: lastPart is undefined');
+    try {
+      const parts = imageUrl.split('/');
+      const lastPart = parts.pop();
+      if (!lastPart) return;
+      const filename = lastPart.split('.')[0];
+      const publicId = `memeories-store/${filename}`;
+      await cloudinary.uploader.destroy(publicId);
+    } catch (error) {
+      console.error('Error deleting image:', error);
     }
-    const publicId = lastPart.split('.')[0];
-    await cloudinary.uploader.destroy(`memeories-store/${publicId}`);
   }
 }

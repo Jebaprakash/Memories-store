@@ -18,8 +18,11 @@ export class Product {
     @Index()
     category: string;
 
-    @Column('simple-array')
+    @Column('simple-array', { nullable: true })
     images: string[];
+
+    @Column({ nullable: true })
+    image_url: string;
 
     @Column({ default: 0 })
     stockQty: number;

@@ -7,6 +7,7 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { ProductsModule } from '../products/products.module';
 import { OrdersModule } from '../orders/orders.module';
+import { CloudinaryModule } from '../../cloudinary/cloudinary.module';
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import { OrdersModule } from '../orders/orders.module';
         }),
         ProductsModule,
         OrdersModule,
+        CloudinaryModule,
     ],
     controllers: [AdminController],
     providers: [AdminService],
