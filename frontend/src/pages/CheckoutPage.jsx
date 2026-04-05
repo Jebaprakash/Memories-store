@@ -100,10 +100,10 @@ export const CheckoutPage = () => {
 
         try {
             const itemsFormatted = cartItems.map((item) => ({
-                productId: item.id,
-                qty: item.quantity,
+                id: item.id,
+                quantity: item.quantity,
                 name: item.name,
-                price: item.price,
+                price: typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price,
                 image: item.images?.[0]
             }));
 

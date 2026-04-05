@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, Between, LessThanOrEqual, MoreThanOrEqual, ILike } from 'typeorm';
 import { Product } from '../../shared/entities/product.entity';
@@ -145,9 +145,17 @@ export class ProductsService {
     }
 
     async updateStock(id: string, quantity: number) {
+        if (!id) {
+            throw new BadRequestException('Product ID is required');
+        }
+        
+        if (isNaN(quantity)) {
+            throw new BadRequestException('Invalid quantity provided');
+        }
+
         const product = await this.productRepository.findOne({ where: { id } });
         if (!product) {
-            throw new NotFoundException('Product not found');
+            throw new NotFoundException(`Product with ID ${id} not found`);
         }
 
         product.stockQty -= quantity;
@@ -166,9 +174,13 @@ export class ProductsService {
     }
 
     async checkStock(id: string, quantity: number) {
+        if (!id) {
+            throw new BadRequestException('Product ID is required');
+        }
+
         const product = await this.productRepository.findOne({ where: { id } });
         if (!product) {
-            throw new NotFoundException('Product not found');
+            throw new NotFoundException(`Product with ID ${id} not found`);
         }
 
         if (product.stockQty < quantity) {

@@ -17,7 +17,14 @@ export class OrdersService {
     async create(orderData: any) {
         // Validate stock before placing order
         for (const item of orderData.items) {
-            const stockCheck = await this.productsService.checkStock(item.id, item.quantity);
+            const id = item.id || item.productId;
+            const quantity = parseInt(item.quantity || item.qty, 10);
+            
+            if (!id || isNaN(quantity)) {
+                throw new BadRequestException('Invalid item format or quantity');
+            }
+
+            const stockCheck = await this.productsService.checkStock(id, quantity);
             if (!stockCheck.success) {
                 throw new BadRequestException(stockCheck.message);
             }
@@ -25,7 +32,9 @@ export class OrdersService {
 
         // Reduce stock after validation
         for (const item of orderData.items) {
-            await this.productsService.updateStock(item.id, item.quantity);
+            const id = item.id || item.productId;
+            const quantity = parseInt(item.quantity || item.qty, 10);
+            await this.productsService.updateStock(id, quantity);
         }
 
         const order = this.orderRepository.create(orderData);
