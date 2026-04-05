@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { productsAPI } from '../services/api';
 import { ProductCard } from '../components/ProductCard';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { getImageUrl } from '../utils/url';
 import toast from 'react-hot-toast';
 
 export const HomePage = () => {
@@ -26,8 +27,19 @@ export const HomePage = () => {
                 productsAPI.getCategories(),
             ]);
 
-            setFeaturedProducts(productsRes.data.data.slice(0, 8));
-            setCategories(categoriesRes.data.data);
+            const allProducts = productsRes.data.data;
+            setFeaturedProducts(allProducts.slice(0, 8));
+            
+            // Map categories to their first found product image
+            const categoryItems = categoriesRes.data.data.map(cat => {
+                const product = allProducts.find(p => p.category === cat);
+                return {
+                    name: cat,
+                    image: product?.images?.[0] || product?.image_url
+                };
+            });
+            
+            setCategories(categoryItems);
         } catch (error) {
             console.error('Error fetching data:', error);
             toast.error('Failed to load products');
@@ -241,19 +253,19 @@ export const HomePage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {categories.map((category, index) => (
                             <motion.div
-                                key={category}
+                                key={category.name}
                                 whileHover={{ y: -10 }}
                                 className="group relative aspect-square rounded-[3rem] overflow-hidden bg-white shadow-xl border border-slate-100"
                             >
                                 <img
-                                    src={`https://images.unsplash.com/photo-${index === 0 ? '1523275335684-37898b6baf30' : index === 1 ? '1491553895911-0055eca6402d' : '1505740420928-5e560c06d30e'}?q=80&w=800&auto=format&fit=crop`}
-                                    alt={category}
-                                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-80"
+                                    src={getImageUrl(category.image) || `https://images.unsplash.com/photo-${index === 0 ? '1523275335684-37898b6baf30' : index === 1 ? '1491553895911-0055eca6402d' : '1505740420928-5e560c06d30e'}?q=80&w=800&auto=format&fit=crop`}
+                                    alt={category.name}
+                                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
                                 <div className="absolute bottom-10 left-10">
-                                    <h3 className="text-3xl font-black text-white capitalize mb-4 tracking-tighter">{category}</h3>
-                                    <Link to={`/products?category=${encodeURIComponent(category)}`}>
+                                    <h3 className="text-3xl font-black text-white capitalize mb-4 tracking-tighter">{category.name}</h3>
+                                    <Link to={`/products?category=${encodeURIComponent(category.name)}`}>
                                         <button className="px-6 py-3 bg-white text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
                                             Explore More
                                         </button>
