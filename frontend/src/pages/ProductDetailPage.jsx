@@ -199,9 +199,9 @@ export const ProductDetailPage = () => {
                                     <div className="flex-1">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Stock Status</p>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                                            <span className="text-sm font-black text-slate-900 uppercase tracking-widest leading-none">
-                                                In Stock / {product.stockQty < 10 ? `Only ${product.stockQty} left` : 'Ready to ship'}
+                                            <div className={`w-2 h-2 rounded-full animate-pulse ${product.stockQty <= 5 ? 'bg-amber-500' : 'bg-green-500'}`} />
+                                            <span className={`text-sm font-black uppercase tracking-widest leading-none ${product.stockQty <= 5 ? 'text-amber-600' : 'text-slate-900'}`}>
+                                                {product.stockQty <= 5 ? `Only ${product.stockQty} left!` : 'In Stock / Ready to ship'}
                                             </span>
                                         </div>
                                     </div>

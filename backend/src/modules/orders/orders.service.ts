@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order, PaymentStatus, OrderStatus } from '../../shared/entities/order.entity';
 import { MailService } from '../../shared/services/mail.service';
+import { ProductsService } from '../products/products.service';
 
 @Injectable()
 export class OrdersService {
@@ -10,14 +11,28 @@ export class OrdersService {
         @InjectRepository(Order)
         private orderRepository: Repository<Order>,
         private mailService: MailService,
+        private productsService: ProductsService,
     ) { }
 
     async create(orderData: any) {
+        // Validate stock before placing order
+        for (const item of orderData.items) {
+            const stockCheck = await this.productsService.checkStock(item.id, item.quantity);
+            if (!stockCheck.success) {
+                throw new BadRequestException(stockCheck.message);
+            }
+        }
+
+        // Reduce stock after validation
+        for (const item of orderData.items) {
+            await this.productsService.updateStock(item.id, item.quantity);
+        }
+
         const order = this.orderRepository.create(orderData);
         const savedOrder = await this.orderRepository.save(order);
         return {
             success: true,
-            message: 'Order created successfully',
+            message: 'Order created successfully and stock updated',
             data: savedOrder,
         };
     }

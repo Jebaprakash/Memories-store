@@ -143,4 +143,45 @@ export class ProductsService {
             data: categories,
         };
     }
+
+    async updateStock(id: string, quantity: number) {
+        const product = await this.productRepository.findOne({ where: { id } });
+        if (!product) {
+            throw new NotFoundException('Product not found');
+        }
+
+        product.stockQty -= quantity;
+        if (product.stockQty < 0) product.stockQty = 0;
+        
+        // We keep isActive=true so it still shows "Out of Stock" in the frontend
+        // if the user wants it hidden they can do it manually, but for now 
+        // reaching 0 stock just makes it out of stock.
+        
+        await this.productRepository.save(product);
+
+        return {
+            success: true,
+            message: 'Stock updated successfully',
+        };
+    }
+
+    async checkStock(id: string, quantity: number) {
+        const product = await this.productRepository.findOne({ where: { id } });
+        if (!product) {
+            throw new NotFoundException('Product not found');
+        }
+
+        if (product.stockQty < quantity) {
+            return {
+                success: false,
+                message: `Not enough stock for ${product.name}`,
+                available: product.stockQty,
+            };
+        }
+
+        return {
+            success: true,
+            available: product.stockQty,
+        };
+    }
 }

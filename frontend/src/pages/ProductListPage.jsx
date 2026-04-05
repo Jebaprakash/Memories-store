@@ -209,9 +209,9 @@ export const ProductListPage = () => {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10"
+                                    className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6"
                                 >
-                                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                                         <LoadingSkeleton key={i} type="product" />
                                     ))}
                                 </motion.div>
@@ -220,18 +220,18 @@ export const ProductListPage = () => {
                                     key="empty"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="flex flex-col items-center justify-center py-40 bg-white rounded-[4rem] border border-slate-100 shadow-sm"
+                                    className="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-slate-100 shadow-sm mx-2"
                                 >
-                                    <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-8">
-                                        <svg className="w-10 h-10 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                                        <svg className="w-8 h-8 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                         </svg>
                                     </div>
-                                    <h3 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter">No items found</h3>
-                                    <p className="text-slate-500 font-medium mb-10">Adjust your filters to see more results</p>
+                                    <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tighter text-center">No items found</h3>
+                                    <p className="text-sm text-slate-500 font-medium mb-8 text-center px-4">Adjust your filters to see more results</p>
                                     <button
                                         onClick={clearFilters}
-                                        className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl"
+                                        className="px-8 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg"
                                     >
                                         Clear Filters
                                     </button>
@@ -241,14 +241,14 @@ export const ProductListPage = () => {
                                     key="grid"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10"
+                                    className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6"
                                 >
                                     {products.map((product, index) => (
                                         <motion.div
                                             key={product.id}
-                                            initial={{ opacity: 0, y: 20 }}
+                                            initial={{ opacity: 0, y: 15 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: index * 0.05 }}
+                                            transition={{ delay: index * 0.03 }}
                                         >
                                             <ProductCard product={product} />
                                         </motion.div>

@@ -98,7 +98,7 @@ export class AdminController {
         }
 
         const updateData: any = { ...productData };
-        
+
         if (imageUrls.length > 0) {
             updateData.image_url = imageUrls[0];
             updateData.images = imageUrls;
