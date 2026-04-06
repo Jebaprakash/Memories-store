@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { productsAPI } from '../services/api';
 import { ProductCard } from '../components/ProductCard';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
-import { getImageUrl } from '../utils/url';
+import { getCategoryImage } from '../utils/cloudinary';
 import toast from 'react-hot-toast';
 
 export const HomePage = () => {
@@ -251,28 +251,45 @@ export const HomePage = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {categories.map((category, index) => (
-                            <motion.div
-                                key={category.name}
-                                whileHover={{ y: -10 }}
-                                className="group relative aspect-square rounded-[3rem] overflow-hidden bg-white shadow-xl border border-slate-100"
-                            >
-                                <img
-                                    src={getImageUrl(category.image) || `https://images.unsplash.com/photo-${index === 0 ? '1523275335684-37898b6baf30' : index === 1 ? '1491553895911-0055eca6402d' : '1505740420928-5e560c06d30e'}?q=80&w=800&auto=format&fit=crop`}
-                                    alt={category.name}
-                                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
-                                <div className="absolute bottom-10 left-10">
-                                    <h3 className="text-3xl font-black text-white capitalize mb-4 tracking-tighter">{category.name}</h3>
-                                    <Link to={`/products?category=${encodeURIComponent(category.name)}`}>
-                                        <button className="px-6 py-3 bg-white text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                                            Explore More
-                                        </button>
-                                    </Link>
-                                </div>
-                            </motion.div>
-                        ))}
+                        {categories.map((category, index) => {
+                            const fallbacks = [
+                                'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=600&auto=format&fit=crop',
+                                'https://images.unsplash.com/photo-1491553895911-0055eca6402d?q=80&w=600&auto=format&fit=crop',
+                                'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop',
+                            ];
+                            const imgSrc = getCategoryImage(category.image) || fallbacks[index % fallbacks.length];
+                            return (
+                                <motion.div
+                                    key={category.name}
+                                    whileHover={{ y: -10 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className="group relative aspect-square rounded-[3rem] overflow-hidden bg-white shadow-xl border border-slate-100"
+                                >
+                                    <img
+                                        src={imgSrc}
+                                        alt={`Shop ${category.name} category`}
+                                        width={600}
+                                        height={600}
+                                        loading="lazy"
+                                        decoding="async"
+                                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                                        onError={(e) => { e.currentTarget.src = fallbacks[index % fallbacks.length]; }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
+                                    <div className="absolute bottom-10 left-10">
+                                        <h3 className="text-3xl font-black text-white capitalize mb-4 tracking-tighter">{category.name}</h3>
+                                        <Link to={`/products?category=${encodeURIComponent(category.name)}`}>
+                                            <button className="px-6 py-3 bg-white text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                                                Explore More
+                                            </button>
+                                        </Link>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Block admin pages from search engines
+Disallow: /portal-secure-mgt/
+
+Sitemap: https://demo-mu-amber-91.vercel.app/sitemap.xml

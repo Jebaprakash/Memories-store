@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+/* Font is loaded via <link preload> in index.html  – do NOT @import here to avoid render-blocking */
+/* font-display: swap is handled by Google Fonts via the &display=swap param in the preloaded URL */
 
 @tailwind base;
 @tailwind components;
@@ -134,4 +135,27 @@
 
 .animation-delay-4000 {
   animation-delay: 4s;
+}
+
+/* Marquee animation for brand ticker */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+
+.animate-marquee {
+  display: flex;
+  animation: marquee 20s linear infinite;
+  will-change: transform;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-float,
+  .animate-blob,
+  .animate-spin,
+  .animate-pulse {
+    animation: none !important;
+  }
 }
