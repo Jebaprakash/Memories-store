@@ -8,46 +8,14 @@
 
 const CLOUDINARY_BASE = 'https://res.cloudinary.com';
 
-/**
- * Extracts the public ID and cloud name from a Cloudinary URL.
- * Returns null if the URL is not a Cloudinary URL.
- */
-function parseCloudinaryUrl(url) {
-    if (!url || typeof url !== 'string') return null;
-    const match = url.match(
-        /https?:\/\/res\.cloudinary\.com\/([^/]+)\/(image|video|raw)\/upload(?:\/([^/]+(?:\/[^/]+)*))?\/?([^?]+)/
-    );
-    if (!match) return null;
-    return {
-        cloudName: match[1],
-        resourceType: match[2],
-        // match[3] may contain existing transformations
-        existingTransforms: match[3] || '',
-        publicId: match[4],
-    };
-}
-
-/**
- * Builds an optimized Cloudinary URL with given transformation options.
- *
- * @param {string} url - Original image URL (Cloudinary or otherwise)
- * @param {object} options
- * @param {number|string} [options.width]      - Resize width (e.g. 400)
- * @param {number|string} [options.height]     - Resize height (e.g. 300)
- * @param {'auto'|number} [options.quality]    - Image quality (default: 'auto')
- * @param {'auto'|string} [options.format]     - Image format (default: 'auto' → WebP/AVIF)
- * @param {'fill'|'crop'|'scale'|'fit'|'thumb'} [options.crop] - Crop mode
- * @param {'auto'|'face'} [options.gravity]    - Crop gravity
- * @returns {string} Optimized URL
- */
+// The previous regex parseCloudinaryUrl was removed to prevent path truncations.
 export function getCloudinaryUrl(url, options = {}) {
-    if (!url) return null;
+    if (!url || typeof url !== 'string') return url;
+    if (!url.includes('res.cloudinary.com')) return url;
 
-    const parsed = parseCloudinaryUrl(url);
-    if (!parsed) {
-        // Not a Cloudinary URL – return as-is
-        return url;
-    }
+    // Split at /upload/ to safely insert transformations
+    const parts = url.split('/upload/');
+    if (parts.length !== 2) return url;
 
     const {
         width,
@@ -59,17 +27,25 @@ export function getCloudinaryUrl(url, options = {}) {
     } = options;
 
     // Build transformation string
-    const parts = [];
-    if (format) parts.push(`f_${format}`);
-    if (quality) parts.push(`q_${quality}`);
-    if (crop) parts.push(`c_${crop}`);
-    if (gravity) parts.push(`g_${gravity}`);
-    if (width) parts.push(`w_${width}`);
-    if (height) parts.push(`h_${height}`);
+    const transformParts = [];
+    if (format) transformParts.push(`f_${format}`);
+    if (quality) transformParts.push(`q_${quality}`);
+    if (crop) transformParts.push(`c_${crop}`);
+    if (gravity) transformParts.push(`g_${gravity}`);
+    if (width) transformParts.push(`w_${width}`);
+    if (height) transformParts.push(`h_${height}`);
 
-    const transformation = parts.join(',');
+    const transformation = transformParts.join(',');
 
-    return `${CLOUDINARY_BASE}/${parsed.cloudName}/${parsed.resourceType}/upload/${transformation}/${parsed.publicId}`;
+    let restOfUrl = parts[1];
+    
+    const segments = restOfUrl.split('/');
+    if (segments.length > 1 && /^[a-z]_[a-zA-Z0-9]+/.test(segments[0])) {
+        segments.shift();
+        restOfUrl = segments.join('/');
+    }
+
+    return `${parts[0]}/upload/${transformation}/${restOfUrl}`;
 }
 
 /**
@@ -81,7 +57,7 @@ export function getCloudinaryUrl(url, options = {}) {
  * @returns {string} srcSet string
  */
 export function getCloudinarySrcSet(url, widths = [200, 400, 800, 1200]) {
-    if (!url || !parseCloudinaryUrl(url)) return '';
+    if (!url || typeof url !== 'string' || !url.includes('res.cloudinary.com')) return '';
     return widths
         .map((w) => `${getCloudinaryUrl(url, { width: w })} ${w}w`)
         .join(', ');
