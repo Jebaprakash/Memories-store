@@ -80,7 +80,7 @@ export const OrderManagement = () => {
             'City': order.customer.city,
             'Pincode': order.customer.pincode,
             'Items Count': order.items.length,
-            'Items Details': order.items.map(i => `${i.name} (x${i.qty})`).join(', '),
+            'Items Details': order.items.map(i => `${i.name || 'Product'} (x${i.quantity || i.qty || 0})`).join(', '),
             'Total Amount': order.totalAmount,
             'Payment Method': order.paymentMethod,
             'Payment Status': order.paymentStatus,
@@ -339,18 +339,18 @@ export const OrderManagement = () => {
                                                     <div>
                                                         <p className="font-semibold text-gray-900">{item.name || 'Product'}</p>
                                                         <p className="text-xs text-gray-500">
-                                                            {item.qty} x ₹{parseFloat(item.price || 0).toLocaleString()}
+                                                            {item.quantity || item.qty || 0} x ₹{parseFloat(item.price || 0).toLocaleString()}
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <p className="font-bold text-primary-600">
-                                                    ₹{(parseFloat(item.price || 0) * item.qty).toLocaleString()}
+                                                    ₹{((parseFloat(item.price || 0) || 0) * (item.quantity || item.qty || 0)).toLocaleString()}
                                                 </p>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
-                                {selectedOrder.paymentScreenshot && (
+                                {selectedOrder.paymentScreenshot ? (
                                     <div className="mt-6">
                                         <h3 className="font-bold text-gray-900 mb-3">Payment Screenshot</h3>
                                         <div className="bg-gray-50 p-4 rounded-lg flex justify-center">
@@ -358,10 +358,33 @@ export const OrderManagement = () => {
                                                 <img
                                                     src={getImageUrl(selectedOrder.paymentScreenshot)}
                                                     alt="Payment Screenshot"
-                                                    className="max-h-64 object-contain rounded shadow-sm border border-gray-200 hover:scale-[1.02] transition-transform cursor-pointer"
+                                                    className="max-h-96 object-contain rounded-xl shadow-lg border-4 border-white hover:scale-[1.02] transition-transform cursor-pointer"
                                                 />
                                             </a>
                                         </div>
+                                        <p className="text-center text-xs text-gray-500 mt-2 italic">Click image to view full size</p>
+                                    </div>
+                                ) : (
+                                    <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                                        <h3 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Payment Info
+                                        </h3>
+                                        {selectedOrder.paymentMethod === 'COD' ? (
+                                            <p className="text-blue-800 text-sm">
+                                                This is a <strong>Cash on Delivery</strong> order. No payment screenshot is expected before delivery.
+                                            </p>
+                                        ) : selectedOrder.paymentMethod === 'QR' ? (
+                                            <p className="text-amber-700 text-sm font-medium">
+                                                This order was placed via <strong>QR Payment</strong>, but <strong>no screenshot was uploaded</strong> by the customer. Please verify payment manually.
+                                            </p>
+                                        ) : (
+                                            <p className="text-blue-800 text-sm">
+                                                Payment method: <strong>{selectedOrder.paymentMethod}</strong>. No screenshot available.
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                             </div>

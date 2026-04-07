@@ -135,10 +135,10 @@ export const OrderSuccessPage = () => {
                                     >
                                         <div>
                                             <p className="font-bold text-slate-900 line-clamp-1">{item.name}</p>
-                                            <p className="text-xs text-slate-400 font-black uppercase tracking-widest py-1">Qty: {item.qty}</p>
+                                            <p className="text-xs text-slate-400 font-black uppercase tracking-widest py-1">Qty: {item.quantity || item.qty || 0}</p>
                                         </div>
                                         <p className="font-black text-slate-900 italic">
-                                            ₹{(item.price * item.qty).toLocaleString()}
+                                            ₹{((parseFloat(item.price || 0) || 0) * (item.quantity || item.qty || 0)).toLocaleString()}
                                         </p>
                                     </motion.div>
                                 ))}

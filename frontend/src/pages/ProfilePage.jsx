@@ -375,7 +375,7 @@ export const ProfilePage = () => {
                                                                     </div>
                                                                 )}
                                                                 <span className="absolute -top-2 -right-2 bg-slate-900 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white">
-                                                                    {item.qty}
+                                                                    {item.quantity || item.qty || 0}
                                                                 </span>
                                                             </div>
                                                         ))}
@@ -494,17 +494,33 @@ export const ProfilePage = () => {
                                                 <div>
                                                     <p className="font-bold text-slate-900">{item.name || 'Product'}</p>
                                                     <p className="text-xs text-slate-500 font-bold">
-                                                        {item.qty} x ₹{parseFloat(item.price || 0).toLocaleString()}
+                                                        {item.quantity || item.qty || 0} x ₹{parseFloat(item.price || 0).toLocaleString()}
                                                     </p>
                                                 </div>
                                             </div>
                                             <p className="font-black text-primary-600 text-lg">
-                                                ₹{(parseFloat(item.price || 0) * item.qty).toLocaleString()}
+                                                ₹{((parseFloat(item.price || 0) || 0) * (item.quantity || item.qty || 0)).toLocaleString()}
                                             </p>
                                         </div>
                                     ))}
                                 </div>
                             </div>
+
+                            {selectedOrder.paymentScreenshot && (
+                                <div className="mt-6">
+                                    <h3 className="font-bold text-slate-900 mb-3">Your Payment Screenshot</h3>
+                                    <div className="bg-slate-50 p-4 rounded-2xl flex justify-center">
+                                        <a href={getImageUrl(selectedOrder.paymentScreenshot)} target="_blank" rel="noopener noreferrer">
+                                            <img
+                                                src={getImageUrl(selectedOrder.paymentScreenshot)}
+                                                alt="Payment Screenshot"
+                                                className="max-h-64 object-contain rounded-xl shadow-lg border-4 border-white hover:scale-[1.02] transition-transform cursor-pointer"
+                                            />
+                                        </a>
+                                    </div>
+                                    <p className="text-center text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-widest">Verify the screenshot you uploaded</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
