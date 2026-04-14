@@ -40,6 +40,8 @@ export const CheckoutPage = () => {
     }, [user]);
 
     const [paymentMethod, setPaymentMethod] = useState('COD');
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
 
     const deliveryCharge = 50;
     const subtotal = getCartTotal();
@@ -96,6 +98,11 @@ export const CheckoutPage = () => {
             return;
         }
 
+        if (paymentMethod === 'QR' && !showConfirmation) {
+            setShowConfirmation(true);
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -112,6 +119,10 @@ export const CheckoutPage = () => {
             payloadData.append('customer', JSON.stringify(formData));
             payloadData.append('totalAmount', total);
             payloadData.append('paymentMethod', paymentMethod);
+            
+            if (paymentMethod === 'QR') {
+                payloadData.append('orderStatus', 'payment_submitted');
+            }
 
             if (paymentMethod === 'QR' && screenshot) {
                 payloadData.append('screenshot', screenshot);
@@ -129,6 +140,7 @@ export const CheckoutPage = () => {
             toast.error(error.response?.data?.message || 'Failed to place order');
         } finally {
             setLoading(false);
+            setShowConfirmation(false);
         }
     };
 
@@ -340,42 +352,89 @@ export const CheckoutPage = () => {
                                         animate={{ opacity: 1, height: 'auto' }}
                                         className="mt-8 p-8 bg-slate-900 rounded-[2.5rem] text-white overflow-hidden"
                                     >
-                                        <div className="flex flex-col md:flex-row items-center gap-8">
-                                            <div className="w-40 h-40 bg-white p-4 rounded-3xl flex items-center justify-center">
-                                                <div className="w-full text-center">
-                                                    <QRCodeSVG
-                                                        value={generateUPIString(Date.now().toString(), total)}
-                                                        size={128}
-                                                        level="H"
-                                                        includeMargin={true}
-                                                    />
+                                        <div className="flex flex-col items-center gap-8">
+                                            {!isMobile ? (
+                                                <div className="flex flex-col md:flex-row items-center gap-8 w-full">
+                                                    <div className="w-48 h-48 bg-white p-4 rounded-3xl flex items-center justify-center shadow-2xl">
+                                                        <QRCodeSVG
+                                                            value={generateUPIString(Date.now().toString(), total)}
+                                                            size={160}
+                                                            level="H"
+                                                            includeMargin={true}
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 text-center md:text-left">
+                                                        <h3 className="text-2xl font-black mb-2 uppercase tracking-tight">Scan to Pay</h3>
+                                                        <p className="text-slate-400 font-medium mb-6">Scan this QR code with any UPI app like GPay, PhonePe, or Paytm</p>
+                                                        <div className="inline-flex items-center gap-3 bg-white/10 px-6 py-3 rounded-2xl border border-white/5">
+                                                            <span className="text-slate-400 text-sm font-bold uppercase tracking-widest">Amount to Pay:</span>
+                                                            <span className="text-primary-400 text-xl font-black">₹{total.toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex-1 text-center md:text-left">
-                                                <h3 className="text-xl font-black mb-2 uppercase tracking-tight">Pay via UPI</h3>
-                                                <div className="bg-white/10 px-6 py-3 rounded-2xl mb-4 inline-block">
-                                                    <code className="text-primary-400 font-bold text-lg">{import.meta.env.VITE_UPI_ID || 'e17mer053-1@okaxis'}</code>
+                                            ) : (
+                                                <div className="w-full space-y-4">
+                                                    <h3 className="text-2xl font-black text-center mb-6 uppercase tracking-tight">Pay Using</h3>
+                                                    <div className="grid grid-cols-1 gap-4">
+                                                        <a
+                                                            href={`googlepay://pay?pa=${import.meta.env.VITE_UPI_ID}&pn=${encodeURIComponent(import.meta.env.VITE_BUSINESS_NAME)}&am=${total}&cu=INR&tn=Order_${Date.now()}`}
+                                                            className="flex items-center justify-center gap-3 bg-white text-slate-900 py-4 rounded-2xl font-black text-lg transition-transform active:scale-95"
+                                                        >
+                                                            <img src="https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png" alt="GPay" className="w-6 h-6" />
+                                                            Google Pay
+                                                        </a>
+                                                        <a
+                                                            href={`phonepe://pay?pa=${import.meta.env.VITE_UPI_ID}&pn=${encodeURIComponent(import.meta.env.VITE_BUSINESS_NAME)}&am=${total}&cu=INR&tn=Order_${Date.now()}`}
+                                                            className="flex items-center justify-center gap-3 bg-[#5f259f] text-white py-4 rounded-2xl font-black text-lg transition-transform active:scale-95"
+                                                        >
+                                                            PhonePe
+                                                        </a>
+                                                        <a
+                                                            href={generateUPIString(Date.now().toString(), total)}
+                                                            className="flex items-center justify-center gap-3 bg-primary-600 text-white py-4 rounded-2xl font-black text-lg transition-transform active:scale-95"
+                                                        >
+                                                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                            </svg>
+                                                            Any UPI App
+                                                        </a>
+                                                    </div>
                                                 </div>
-                                                <h3 className="text-xl font-black mt-4 mb-2 uppercase tracking-tight">Bank Details</h3>
-                                                <div className="bg-white/10 px-6 py-4 rounded-2xl mb-4 text-sm font-medium leading-relaxed">
-                                                    <p><span className="text-slate-400">Account Name:</span> KIRUPAKARAN R</p>
-                                                    <p><span className="text-slate-400">Account Number:</span> 351100250650060</p>
-                                                    <p><span className="text-slate-400">Branch:</span> PUTHAGARAM</p>
-                                                    <p><span className="text-slate-400">Account Type:</span> Savings Account</p>
-                                                    <p><span className="text-slate-400">IFSC Code:</span> <code className="text-primary-400 font-bold">TMBL0000351</code></p>
+                                            )}
+
+                                            <div className="w-full h-px bg-white/10 my-4" />
+
+                                            <div className="w-full">
+                                                <h3 className="text-xl font-black mb-4 uppercase tracking-tight">Alternatively Pay to Bank</h3>
+                                                <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10 mb-6 text-sm font-medium">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <p className="text-slate-500 uppercase text-[10px] font-black tracking-widest mb-1">Account Name</p>
+                                                            <p className="text-white font-bold">{import.meta.env.VITE_BANK_ACCOUNT_NAME}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-slate-500 uppercase text-[10px] font-black tracking-widest mb-1">Account Number</p>
+                                                            <p className="text-primary-400 font-mono font-bold">{import.meta.env.VITE_BANK_ACCOUNT_NUMBER}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-slate-500 uppercase text-[10px] font-black tracking-widest mb-1">IFSC Code</p>
+                                                            <p className="text-primary-400 font-mono font-bold">{import.meta.env.VITE_BANK_IFSC}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-slate-500 uppercase text-[10px] font-black tracking-widest mb-1">Branch / Type</p>
+                                                            <p className="text-white font-bold">{import.meta.env.VITE_BANK_BRANCH} ({import.meta.env.VITE_BANK_ACCOUNT_TYPE})</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <p className="text-slate-400 text-sm font-medium leading-relaxed mb-4">
-                                                    Please transfer the total amount to the UPI ID or Bank Account above. After payment, upload your payment screenshot below.
-                                                </p>
-                                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700/50">
-                                                    <label className="block text-sm font-bold text-slate-300 mb-2">Upload Payment Screenshot *</label>
+
+                                                <h3 className="text-xl font-black mb-4 uppercase tracking-tight">Upload Screenshot</h3>
+                                                <div className="bg-slate-800 p-6 rounded-[2rem] border border-slate-700/50">
                                                     <input
                                                         type="file"
                                                         accept="image/*"
                                                         onChange={(e) => setScreenshot(e.target.files[0])}
-                                                        required={paymentMethod === 'QR'}
                                                         className="block w-full text-sm text-slate-400
-                                                            file:mr-4 file:py-2.5 file:px-6
+                                                            file:mr-4 file:py-3 file:px-8
                                                             file:rounded-xl file:border-0
                                                             file:text-sm file:font-bold
                                                             file:bg-primary-500 file:text-white
@@ -383,8 +442,11 @@ export const CheckoutPage = () => {
                                                             file:cursor-pointer"
                                                     />
                                                     {screenshot && (
-                                                        <p className="mt-2 text-primary-400 text-xs font-medium">
-                                                            Selected: {screenshot.name}
+                                                        <p className="mt-3 text-primary-400 text-sm font-bold flex items-center gap-2">
+                                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                            </svg>
+                                                            Screenshot selected: {screenshot.name}
                                                         </p>
                                                     )}
                                                 </div>
@@ -464,6 +526,68 @@ export const CheckoutPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Payment Confirmation Modal */}
+            {showConfirmation && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        onClick={() => setShowConfirmation(false)}
+                    />
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="relative bg-white rounded-[3rem] p-8 md:p-12 max-w-lg w-full shadow-2xl overflow-hidden"
+                    >
+                        <div className="absolute top-0 right-0 p-8">
+                            <button onClick={() => setShowConfirmation(false)} className="text-slate-400 hover:text-slate-900 transition-colors">
+                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="text-center">
+                            <div className="w-24 h-24 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-8">
+                                <svg className="w-12 h-12 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Payment Status</h3>
+                            <p className="text-slate-500 text-lg font-medium mb-10 leading-relaxed">
+                                Did you complete the payment of <span className="text-slate-900 font-bold">₹{total.toLocaleString()}</span>?
+                            </p>
+
+                            <div className="flex flex-col gap-4">
+                                <motion.button
+                                    whileHover={{ y: -4 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={(e) => {
+                                        setShowConfirmation(false);
+                                        // Trigger handle submit again but this time with showConfirmation as true logic
+                                        // Wait, I already modified handleSubmit to handle this.
+                                        // I'll call handleSubmit directly but I need to pass event or mock it.
+                                        handleSubmit({ preventDefault: () => { } });
+                                    }}
+                                    className="w-full bg-slate-900 text-white rounded-2xl py-6 font-black text-xl tracking-wide shadow-xl shadow-slate-900/20"
+                                >
+                                    YES, I HAVE PAID
+                                </motion.button>
+                                <motion.button
+                                    whileHover={{ y: -2 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setShowConfirmation(false)}
+                                    className="w-full bg-slate-100 text-slate-600 rounded-2xl py-5 font-bold text-lg"
+                                >
+                                    No, Let me try again
+                                </motion.button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 };

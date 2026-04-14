@@ -132,6 +132,7 @@ export const OrderManagement = () => {
                             >
                                 <option value="">All Statuses</option>
                                 <option value="Pending">Pending</option>
+                                <option value="payment_submitted">Payment Submitted</option>
                                 <option value="Confirmed">Confirmed</option>
                                 <option value="Shipped">Shipped</option>
                                 <option value="Delivered">Delivered</option>
@@ -230,11 +231,20 @@ export const OrderManagement = () => {
                                                 className="text-sm border border-gray-300 rounded px-3 py-1 font-medium"
                                             >
                                                 <option value="Pending">Pending</option>
+                                                <option value="payment_submitted">Payment Submitted</option>
                                                 <option value="Confirmed">Confirmed</option>
                                                 <option value="Shipped">Shipped</option>
                                                 <option value="Delivered">Delivered</option>
                                                 <option value="Cancelled">Cancelled</option>
                                             </select>
+                                            {order.orderStatus === 'payment_submitted' && (
+                                                <button
+                                                    onClick={() => handleStatusUpdate(order.id, 'orderStatus', 'Confirmed')}
+                                                    className="mt-2 w-full bg-primary-600 hover:bg-primary-700 text-white text-[10px] font-black py-1.5 rounded-lg uppercase tracking-wider transition-all shadow-lg shadow-primary-500/30"
+                                                >
+                                                    Verify Payment
+                                                </button>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4">
                                             <button
