@@ -151,4 +151,24 @@ export class OrdersService {
             data: savedOrder,
         };
     }
+
+    async deleteOrder(id: string) {
+        const order = await this.orderRepository.findOne({ where: { id } });
+        if (!order) {
+            throw new NotFoundException('Order not found');
+        }
+        await this.orderRepository.remove(order);
+        return {
+            success: true,
+            message: 'Order deleted successfully',
+        };
+    }
+
+    async deleteAllOrders() {
+        await this.orderRepository.clear(); // Or use query builder to delete all
+        return {
+            success: true,
+            message: 'All order history deleted successfully',
+        };
+    }
 }

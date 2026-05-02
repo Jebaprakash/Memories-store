@@ -206,4 +206,20 @@ export class AdminController {
     async updateOrder(@Param('id') id: string, @Body() updateData: any) {
         return this.ordersService.updateOrder(id, updateData);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @Delete('orders')
+    @ApiOperation({ summary: 'Delete all order history' })
+    async deleteAllOrders() {
+        return this.ordersService.deleteAllOrders();
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @Delete('orders/:id')
+    @ApiOperation({ summary: 'Delete an order' })
+    async deleteOrder(@Param('id') id: string) {
+        return this.ordersService.deleteOrder(id);
+    }
 }

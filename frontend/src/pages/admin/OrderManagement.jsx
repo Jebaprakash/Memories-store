@@ -62,6 +62,37 @@ export const OrderManagement = () => {
             console.error('Error updating order:', error);
             toast.error('Failed to update order');
         }
+    const handleDeleteOrder = async (orderId) => {
+        if (!window.confirm('Are you sure you want to permanently delete this order? This cannot be undone.')) return;
+        try {
+            await adminAPI.deleteOrder(orderId);
+            toast.success('Order deleted successfully');
+            setOrders(prev => prev.filter(o => o.id !== orderId));
+            if (selectedOrder?.id === orderId) setSelectedOrder(null);
+        } catch (error) {
+            console.error('Error deleting order:', error);
+            toast.error('Failed to delete order');
+        }
+    };
+
+    const handleClearAllOrders = async () => {
+        if (!window.confirm('WARNING: Are you sure you want to permanently delete ALL order history? This will clear all orders to manage storage and CANNOT be undone!')) return;
+        
+        // Double confirmation for safety
+        if (!window.confirm('Please confirm once more. This will wipe out all order records.')) return;
+
+        try {
+            setLoading(true);
+            await adminAPI.clearAllOrders();
+            toast.success('All order history cleared successfully');
+            setOrders([]);
+            setSelectedOrder(null);
+        } catch (error) {
+            console.error('Error clearing orders:', error);
+            toast.error('Failed to clear order history');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const exportOrders = () => {
@@ -99,15 +130,26 @@ export const OrderManagement = () => {
             <div>
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-4xl font-bold text-gray-900">Orders</h1>
-                    <button
-                        onClick={exportOrders}
-                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg"
-                    >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Export Excel
-                    </button>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={handleClearAllOrders}
+                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Clear History
+                        </button>
+                        <button
+                            onClick={exportOrders}
+                            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Export Excel
+                        </button>
+                    </div>
                 </div>
 
                 {/* Filters */}
@@ -189,6 +231,7 @@ export const OrderManagement = () => {
                                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Payment</th>
                                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
                                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
+                                    <th className="px-4 py-4 text-center text-sm font-semibold text-gray-900">Delete</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
@@ -252,6 +295,17 @@ export const OrderManagement = () => {
                                                 className="text-primary-600 hover:text-primary-700 font-medium"
                                             >
                                                 View Details
+                                            </button>
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            <button
+                                                onClick={() => handleDeleteOrder(order.id)}
+                                                title="Delete order"
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all mx-auto"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
                                             </button>
                                         </td>
                                     </tr>
