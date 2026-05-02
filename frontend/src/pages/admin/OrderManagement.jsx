@@ -62,6 +62,8 @@ export const OrderManagement = () => {
             console.error('Error updating order:', error);
             toast.error('Failed to update order');
         }
+    };
+
     const handleDeleteOrder = async (orderId) => {
         if (!window.confirm('Are you sure you want to permanently delete this order? This cannot be undone.')) return;
         try {
