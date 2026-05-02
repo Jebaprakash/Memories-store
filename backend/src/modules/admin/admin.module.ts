@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Admin } from '../../shared/entities/admin.entity';
+import { Category } from '../../shared/entities/category.entity';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { ProductsModule } from '../products/products.module';
@@ -11,7 +12,7 @@ import { CloudinaryModule } from '../../cloudinary/cloudinary.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Admin]),
+        TypeOrmModule.forFeature([Admin, Category]),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({

@@ -11,15 +11,20 @@ import {
     UseGuards,
     UseInterceptors,
     UploadedFiles,
+    NotFoundException,
+    ConflictException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { Repository } from 'typeorm';
 import { AdminService } from './admin.service';
 import { ProductsService } from '../products/products.service';
 import { OrdersService } from '../orders/orders.service';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
+import { Category } from '../../shared/entities/category.entity';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -29,6 +34,8 @@ export class AdminController {
         private readonly productsService: ProductsService,
         private readonly ordersService: OrdersService,
         private readonly cloudinaryService: CloudinaryService,
+        @InjectRepository(Category)
+        private readonly categoryRepository: Repository<Category>,
     ) { }
 
     @Post('login')
@@ -36,6 +43,62 @@ export class AdminController {
     async login(@Body() body: any) {
         return this.adminService.login(body.username, body.password);
     }
+
+    // ─── Category endpoints ───────────────────────────────────────
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @Get('categories')
+    @ApiOperation({ summary: 'Get all categories' })
+    async getCategories() {
+        const categories = await this.categoryRepository.find({
+            order: { sortOrder: 'ASC', createdAt: 'ASC' },
+        });
+        return { success: true, data: categories };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @Post('categories')
+    @ApiOperation({ summary: 'Create a category' })
+    async createCategory(@Body() body: { name: string; description?: string }) {
+        const existing = await this.categoryRepository.findOne({ where: { name: body.name } });
+        if (existing) {
+            throw new ConflictException(`Category "${body.name}" already exists`);
+        }
+        const maxOrder = await this.categoryRepository.maximum('sortOrder');
+        const category = this.categoryRepository.create({
+            name: body.name.trim(),
+            description: body.description?.trim() || undefined,
+            sortOrder: (maxOrder ?? -1) + 1,
+        });
+        const saved = await this.categoryRepository.save(category);
+        return { success: true, message: 'Category created', data: saved };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @Patch('categories/reorder')
+    @ApiOperation({ summary: 'Reorder categories' })
+    async reorderCategories(@Body() body: { orderedIds: string[] }) {
+        for (let i = 0; i < body.orderedIds.length; i++) {
+            await this.categoryRepository.update(body.orderedIds[i], { sortOrder: i });
+        }
+        return { success: true, message: 'Categories reordered' };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @Delete('categories/:id')
+    @ApiOperation({ summary: 'Delete a category' })
+    async deleteCategory(@Param('id') id: string) {
+        const category = await this.categoryRepository.findOne({ where: { id } });
+        if (!category) throw new NotFoundException('Category not found');
+        await this.categoryRepository.remove(category);
+        return { success: true, message: 'Category deleted' };
+    }
+
+    // ─── Product endpoints ────────────────────────────────────────
 
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()

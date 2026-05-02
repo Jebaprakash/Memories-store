@@ -88,6 +88,12 @@ export const ordersAPI = {
 export const adminAPI = {
     login: (credentials) => api.post('admin/login', credentials),
 
+    // Categories
+    getCategories: () => api.get('admin/categories'),
+    createCategory: (data) => api.post('admin/categories', data),
+    deleteCategory: (id) => api.delete(`admin/categories/${id}`),
+    reorderCategories: (orderedIds) => api.patch('admin/categories/reorder', { orderedIds }),
+
     // Products
     getAllProducts: () => api.get('admin/products'),
     createProduct: (formData) => api.post('admin/products', formData, {

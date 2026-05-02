@@ -7,6 +7,7 @@ import { Product } from './shared/entities/product.entity';
 import { User } from './shared/entities/user.entity';
 import { Admin } from './shared/entities/admin.entity';
 import { Order } from './shared/entities/order.entity';
+import { Category } from './shared/entities/category.entity';
 import { ProductsModule } from './modules/products/products.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -52,7 +53,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
           return {
             type: 'postgres',
             url,
-            entities: [Product, User, Admin, Order],
+            entities: [Product, User, Admin, Order, Category],
             autoLoadEntities: true,
             synchronize: true, // Temporary fix for new database
             ssl: {
@@ -73,7 +74,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
           username: configService.get<string>('DB_USER'),
           password: configService.get<string>('DB_PASSWORD'),
           database: configService.get<string>('DB_NAME'),
-          entities: [Product, User, Admin, Order],
+          entities: [Product, User, Admin, Order, Category],
           autoLoadEntities: true,
           synchronize: true,
         };

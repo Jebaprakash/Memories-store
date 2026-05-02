@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 
 export const ProductManagement = () => {
     const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
@@ -22,6 +23,7 @@ export const ProductManagement = () => {
 
     useEffect(() => {
         fetchProducts();
+        fetchCategories();
     }, []);
 
     const fetchProducts = async () => {
@@ -33,6 +35,15 @@ export const ProductManagement = () => {
             toast.error('Failed to load products');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchCategories = async () => {
+        try {
+            const res = await adminAPI.getCategories();
+            setCategories(res.data.data);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
         }
     };
 
@@ -262,13 +273,26 @@ export const ProductManagement = () => {
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                                             Category *
                                         </label>
-                                        <input
-                                            type="text"
-                                            value={formData.category}
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                            required
-                                            className="input-field"
-                                        />
+                                        {categories.length > 0 ? (
+                                            <select
+                                                value={formData.category}
+                                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                                required
+                                                className="input-field"
+                                            >
+                                                <option value="">— Select a category —</option>
+                                                {categories.map((cat) => (
+                                                    <option key={cat.id} value={cat.name}>
+                                                        {cat.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <div className="input-field bg-gray-50 text-gray-400 text-sm flex items-center gap-2">
+                                                <span>⚠️</span>
+                                                <span>No categories yet — <a href="/portal-secure-mgt/categories" className="text-primary-600 underline">create one first</a></span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

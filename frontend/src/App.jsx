@@ -22,6 +22,7 @@ const CartPage = lazy(() => import('./pages/CartPage').then(m => ({ default: m.C
 // ── Admin Pages (lazy loaded – separate chunk) ────────────────
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin').then(m => ({ default: m.AdminLogin })));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const CategoryManagement = lazy(() => import('./pages/admin/CategoryManagement').then(m => ({ default: m.CategoryManagement })));
 const ProductManagement = lazy(() => import('./pages/admin/ProductManagement').then(m => ({ default: m.ProductManagement })));
 const OrderManagement = lazy(() => import('./pages/admin/OrderManagement').then(m => ({ default: m.OrderManagement })));
 
@@ -74,6 +75,16 @@ function App() {
                                 <ProtectedRoute>
                                     <Suspense fallback={<PageLoader />}>
                                         <AdminDashboard />
+                                    </Suspense>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/portal-secure-mgt/categories"
+                            element={
+                                <ProtectedRoute>
+                                    <Suspense fallback={<PageLoader />}>
+                                        <CategoryManagement />
                                     </Suspense>
                                 </ProtectedRoute>
                             }
