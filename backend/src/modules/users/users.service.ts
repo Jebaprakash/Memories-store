@@ -19,6 +19,10 @@ export class UsersService {
         return this.usersRepository.findOne({ where: { id } });
     }
 
+    async findOneByGoogleId(googleId: string): Promise<User | null> {
+        return this.usersRepository.findOne({ where: { googleId } });
+    }
+
     async create(userData: any): Promise<User> {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(userData.password, salt);
@@ -31,6 +35,35 @@ export class UsersService {
             address: userData.address || {},
         });
         return this.usersRepository.save(user);
+    }
+
+    async findOrCreateGoogleUser(profile: {
+        googleId: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+    }): Promise<User> {
+        // First try to find by googleId
+        let user = await this.findOneByGoogleId(profile.googleId);
+        if (user) return user;
+
+        // Then try to find by email (user might have registered with email before)
+        user = await this.findOneByEmail(profile.email);
+        if (user) {
+            // Link google account to existing user
+            user.googleId = profile.googleId;
+            return this.usersRepository.save(user);
+        }
+
+        // Create new user for Google sign-in (no password)
+        const newUser = this.usersRepository.create({
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            email: profile.email,
+            googleId: profile.googleId,
+            address: {},
+        });
+        return this.usersRepository.save(newUser);
     }
 
     async update(id: string, updateData: any): Promise<User | null> {

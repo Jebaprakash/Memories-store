@@ -64,6 +64,7 @@ export const usersAPI = {
     register: (data) => api.post('users/register', data),
     getProfile: () => api.get('users/profile'),
     updateProfile: (data) => api.put('users/profile', data),
+    googleLogin: (accessToken) => api.post('users/google-login', { accessToken }),
 };
 
 // ... existing code ...

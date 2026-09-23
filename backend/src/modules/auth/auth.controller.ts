@@ -25,6 +25,12 @@ export class AuthController {
         return this.authService.login(user);
     }
 
+    @Post('google-login')
+    @ApiOperation({ summary: 'Login or register with Google' })
+    async googleLogin(@Body() body: { accessToken: string }) {
+        return this.authService.googleLogin(body.accessToken);
+    }
+
     @UseGuards(JwtAuthGuard)
     @Get('profile')
     @ApiOperation({ summary: 'Get user profile' })
