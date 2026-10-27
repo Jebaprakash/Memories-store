@@ -53,7 +53,7 @@ export const OrderSuccessPage = () => {
 
     if (!order) return null;
 
-    const upiString = generateUPIString(order.id, order.totalAmount);
+    const upiString = generateUPIString(order.id, parseFloat(order.totalAmount || 0));
     const whatsappUrl = generateWhatsAppMessage(order);
 
     return (
@@ -95,7 +95,7 @@ export const OrderSuccessPage = () => {
                                 <div className="space-y-4">
                                     <div className="flex justify-between">
                                         <span className="text-slate-400 font-bold">Total Amount</span>
-                                        <span className="text-xl font-black text-slate-900 italic">₹{order.totalAmount.toLocaleString()}</span>
+                                        <span className="text-xl font-black text-slate-900 italic">₹{parseFloat(order.totalAmount || 0).toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-slate-400 font-bold">Status</span>

@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import { useWishlist } from '../contexts/WishlistContext';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Navbar = () => {
     const { getCartCount, toggleCart } = useCart();
+    const { getWishlistCount } = useWishlist();
     const { isAuthenticated, user } = useAuth();
     const cartCount = getCartCount();
+    const wishlistCount = getWishlistCount();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -148,6 +151,31 @@ export const Navbar = () => {
                             </AnimatePresence>
                         </div>
 
+                        {/* Wishlist Button */}
+                        <motion.button
+                            onClick={() => navigate('/wishlist')}
+                            aria-label="Wishlist"
+                            className="relative p-3 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            <AnimatePresence>
+                                {wishlistCount > 0 && (
+                                    <motion.span
+                                        initial={{ scale: 0, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0, opacity: 0 }}
+                                        className="absolute top-2 right-2 bg-primary-600 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center border-2 border-white shadow-xl"
+                                    >
+                                        {wishlistCount}
+                                    </motion.span>
+                                )}
+                            </AnimatePresence>
+                        </motion.button>
+
                         {/* Cart Button */}
                         <motion.button
                             onClick={() => navigate('/cart')}
@@ -244,6 +272,26 @@ export const Navbar = () => {
                                     {link.name}
                                 </Link>
                             ))}
+
+                            <Link
+                                to="/wishlist"
+                                className={`flex items-center justify-between px-6 py-4 rounded-2xl text-lg font-black transition-all ${location.pathname === '/wishlist'
+                                    ? 'text-primary-600 bg-primary-50'
+                                    : 'text-slate-600'
+                                    }`}
+                            >
+                                <span className="flex items-center gap-3">
+                                    <svg className="w-5 h-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                    Wishlist
+                                </span>
+                                {wishlistCount > 0 && (
+                                    <span className="px-2.5 py-0.5 bg-primary-600 text-white text-xs rounded-full font-black">
+                                        {wishlistCount}
+                                    </span>
+                                )}
+                            </Link>
 
                             <hr className="border-slate-100" />
 

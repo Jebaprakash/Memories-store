@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { productsAPI } from '../services/api';
 import { useCart } from '../contexts/CartContext';
+import { useWishlist } from '../contexts/WishlistContext';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { getImageUrl } from '../utils/url';
 import toast from 'react-hot-toast';
@@ -11,6 +12,7 @@ export const ProductDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { addToCart } = useCart();
+    const { isInWishlist, toggleWishlist } = useWishlist();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
@@ -34,9 +36,8 @@ export const ProductDetailPage = () => {
     };
 
     const handleAddToCart = () => {
-        if (product) {
+        if (product && product.stockQty > 0) {
             addToCart(product, quantity);
-            toast.success(`Added ${quantity} ${product.name} to cart!`);
             setQuantity(1);
         }
     };
@@ -207,17 +208,40 @@ export const ProductDetailPage = () => {
                                     </div>
                                 </div>
 
-                                <motion.button
-                                    onClick={handleAddToCart}
-                                    whileHover={{ y: -4, scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className="w-full bg-slate-900 text-white rounded-3xl py-7 font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-slate-900/20 flex items-center justify-center gap-4 transition-all"
-                                >
-                                    Add to Private Bag
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                    </svg>
-                                </motion.button>
+                                <div className="flex items-center gap-4">
+                                    <motion.button
+                                        onClick={handleAddToCart}
+                                        whileHover={{ y: -4, scale: 1.01 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="flex-1 bg-cream-900 text-white rounded-3xl py-6 font-black text-sm uppercase tracking-[0.3em] shadow-xl shadow-cream-900/20 hover:bg-primary-600 transition-all flex items-center justify-center gap-4"
+                                    >
+                                        Add to Bag
+                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                    </motion.button>
+                                    <motion.button
+                                        onClick={() => toggleWishlist(product)}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        aria-label={isInWishlist(product?.id) ? 'Remove from wishlist' : 'Save to wishlist'}
+                                        className={`w-16 h-16 rounded-3xl border flex items-center justify-center transition-all shadow-sm ${
+                                            isInWishlist(product?.id)
+                                                ? 'bg-primary-600 text-white border-primary-600'
+                                                : 'bg-white text-cream-600 border-cream-200 hover:border-primary-500 hover:text-primary-600'
+                                        }`}
+                                    >
+                                        <svg
+                                            className="w-6 h-6"
+                                            fill={isInWishlist(product?.id) ? 'currentColor' : 'none'}
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth={2}
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        </svg>
+                                    </motion.button>
+                                </div>
 
                                 <div className="grid grid-cols-2 gap-y-6 pt-10 border-t border-slate-100">
                                     {specs.map((spec) => (

@@ -335,7 +335,7 @@ export const ProfilePage = () => {
                                                         </p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-2xl font-black text-slate-900">₹{order.totalAmount.toLocaleString()}</p>
+                                                        <p className="text-2xl font-black text-slate-900">₹{parseFloat(order.totalAmount || 0).toLocaleString()}</p>
                                                         <p className="text-xs text-slate-500 mt-1">{order.items.length} item(s)</p>
                                                     </div>
                                                 </div>
@@ -440,7 +440,7 @@ export const ProfilePage = () => {
                                 <div>
                                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total Amount</p>
                                     <p className="font-black text-primary-600 text-2xl">
-                                        ₹{selectedOrder.totalAmount.toLocaleString()}
+                                        ₹{parseFloat(selectedOrder.totalAmount || 0).toLocaleString()}
                                     </p>
                                 </div>
                             </div>

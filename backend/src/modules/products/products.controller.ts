@@ -13,6 +13,7 @@ export class ProductsController {
     @ApiQuery({ name: 'category', required: false })
     @ApiQuery({ name: 'minPrice', required: false, type: Number })
     @ApiQuery({ name: 'maxPrice', required: false, type: Number })
+    @ApiQuery({ name: 'inStock', required: false, type: Boolean })
     @ApiQuery({ name: 'sort', required: false, enum: ['newest', 'price-low', 'price-high'] })
     @ApiResponse({ status: 200, description: 'List of products' })
     async getProducts(@Query() query: any) {

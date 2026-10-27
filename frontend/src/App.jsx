@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { CartProvider } from './contexts/CartContext';
+import { WishlistProvider } from './contexts/WishlistContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -18,6 +19,7 @@ const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage').then(m =>
 const AuthPage = lazy(() => import('./pages/AuthPage').then(m => ({ default: m.AuthPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const CartPage = lazy(() => import('./pages/CartPage').then(m => ({ default: m.CartPage })));
+const WishlistPage = lazy(() => import('./pages/WishlistPage').then(m => ({ default: m.WishlistPage })));
 
 // ── Admin Pages (lazy loaded – separate chunk) ────────────────
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin').then(m => ({ default: m.AdminLogin })));
@@ -41,7 +43,8 @@ function App() {
         <BrowserRouter>
             <AuthProvider>
                 <CartProvider>
-                    <Toaster
+                    <WishlistProvider>
+                        <Toaster
                         position="bottom-left"
                         toastOptions={{
                             duration: 4000,
@@ -126,6 +129,7 @@ function App() {
                                                     <Route path="/products" element={<ProductListPage />} />
                                                     <Route path="/products/:id" element={<ProductDetailPage />} />
                                                     <Route path="/cart" element={<CartPage />} />
+                                                    <Route path="/wishlist" element={<WishlistPage />} />
                                                     <Route path="/checkout" element={<CheckoutPage />} />
                                                     <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
                                                     <Route path="/login" element={<AuthPage />} />
@@ -147,6 +151,7 @@ function App() {
                             }
                         />
                     </Routes>
+                    </WishlistProvider>
                 </CartProvider>
             </AuthProvider>
         </BrowserRouter>

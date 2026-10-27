@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Order, PaymentStatus, OrderStatus } from '../../shared/entities/order.entity';
+import { Order, PaymentStatus, OrderStatus, PaymentMethod } from '../../shared/entities/order.entity';
+import { Product } from '../../shared/entities/product.entity';
 import { MailService } from '../../shared/services/mail.service';
 import { ProductsService } from '../products/products.service';
 
@@ -15,26 +16,95 @@ export class OrdersService {
     ) { }
 
     async create(orderData: any) {
-        // Validate stock before placing order
+        if (!orderData.items || !Array.isArray(orderData.items) || orderData.items.length === 0) {
+            throw new BadRequestException('Order must contain at least one item');
+        }
+
+        // Validate customer
+        if (!orderData.customer || typeof orderData.customer !== 'object') {
+            throw new BadRequestException('Customer information is required');
+        }
+        const { name, email, phone, address, city, pincode } = orderData.customer;
+        if (!name || typeof name !== 'string' || !name.trim()) {
+            throw new BadRequestException('Customer name is required');
+        }
+        if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+            throw new BadRequestException('A valid email address is required');
+        }
+        if (!phone || typeof phone !== 'string' || phone.trim().length < 10) {
+            throw new BadRequestException('A valid phone number (at least 10 digits) is required');
+        }
+        if (!address || typeof address !== 'string' || !address.trim()) {
+            throw new BadRequestException('Shipping address is required');
+        }
+        if (!city || typeof city !== 'string' || !city.trim()) {
+            throw new BadRequestException('City is required');
+        }
+        if (!pincode || typeof pincode !== 'string' || pincode.trim().length !== 6) {
+            throw new BadRequestException('A valid 6-digit pincode is required');
+        }
+
+        // Validate payment method
+        const validPaymentMethods = [PaymentMethod.COD, PaymentMethod.QR, PaymentMethod.RAZORPAY];
+        if (!validPaymentMethods.includes(orderData.paymentMethod)) {
+            throw new BadRequestException('Invalid payment method');
+        }
+
+        const productRepo = this.orderRepository.manager.getRepository(Product);
+        const validatedItems: any[] = [];
+        let calculatedSubtotal = 0;
+
+        // Authoritative stock and price validation from server database
         for (const item of orderData.items) {
             const id = item.id || item.productId;
             const quantity = parseInt(item.quantity || item.qty, 10);
-            
-            if (!id || isNaN(quantity)) {
+
+            if (!id || isNaN(quantity) || quantity <= 0) {
                 throw new BadRequestException('Invalid item format or quantity');
             }
 
-            const stockCheck = await this.productsService.checkStock(id, quantity);
-            if (!stockCheck.success) {
-                throw new BadRequestException(stockCheck.message);
+            const product = await productRepo.findOne({ where: { id } });
+            if (!product || !product.isActive) {
+                throw new NotFoundException(`Product ${item.name || id} is not available`);
             }
+
+            if (product.stockQty < quantity) {
+                throw new BadRequestException(`Only ${product.stockQty} unit(s) of ${product.name} are available in stock`);
+            }
+
+            const authoritativePrice = parseFloat(product.price.toString());
+            const itemTotal = authoritativePrice * quantity;
+            calculatedSubtotal += itemTotal;
+
+            validatedItems.push({
+                id: product.id,
+                productId: product.id,
+                name: product.name,
+                price: authoritativePrice,
+                quantity,
+                category: product.category,
+                image: (product.images && product.images[0]) || product.image_url || null,
+            });
         }
 
-        // Reduce stock after validation
-        for (const item of orderData.items) {
-            const id = item.id || item.productId;
-            const quantity = parseInt(item.quantity || item.qty, 10);
-            await this.productsService.updateStock(id, quantity);
+        // Reduce stock after all validation succeeds
+        for (const item of validatedItems) {
+            await this.productsService.updateStock(item.id, item.quantity);
+        }
+
+        const deliveryCharge = 50;
+        const authoritativeTotal = Math.round((calculatedSubtotal + deliveryCharge) * 100) / 100;
+
+        // Override client data with authoritative values
+        orderData.items = validatedItems;
+        orderData.totalAmount = authoritativeTotal;
+
+        if (orderData.paymentMethod === PaymentMethod.QR) {
+            orderData.orderStatus = OrderStatus.PaymentSubmitted;
+            orderData.paymentStatus = PaymentStatus.PendingVerification;
+        } else {
+            orderData.orderStatus = OrderStatus.Pending;
+            orderData.paymentStatus = PaymentStatus.Unpaid;
         }
 
         const order = this.orderRepository.create(orderData);

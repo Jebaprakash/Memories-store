@@ -13,39 +13,44 @@ export class ProductsService {
     ) { }
 
     async findAll(query: any) {
-        const { search, category, minPrice, maxPrice, sort } = query;
+        const { search, category, minPrice, maxPrice, sort, inStock } = query;
 
-        const where: any = { isActive: true };
+        const qb = this.productRepository.createQueryBuilder('product')
+            .where('product.isActive = :isActive', { isActive: true });
 
-        if (search) {
-            where.name = ILike(`%${search}%`);
+        if (search && search.trim()) {
+            const term = `%${search.trim()}%`;
+            qb.andWhere(
+                '(product.name ILIKE :term OR product.description ILIKE :term OR product.category ILIKE :term)',
+                { term },
+            );
         }
 
-        if (category) {
-            where.category = category;
+        if (category && category.trim()) {
+            qb.andWhere('product.category = :category', { category: category.trim() });
         }
 
-        if (minPrice && maxPrice) {
-            where.price = Between(parseFloat(minPrice), parseFloat(maxPrice));
-        } else if (minPrice) {
-            where.price = MoreThanOrEqual(parseFloat(minPrice));
-        } else if (maxPrice) {
-            where.price = LessThanOrEqual(parseFloat(maxPrice));
+        if (minPrice !== undefined && minPrice !== '' && !isNaN(parseFloat(minPrice))) {
+            qb.andWhere('product.price >= :minPrice', { minPrice: parseFloat(minPrice) });
         }
 
-        let order: any = { createdAt: 'DESC' };
+        if (maxPrice !== undefined && maxPrice !== '' && !isNaN(parseFloat(maxPrice))) {
+            qb.andWhere('product.price <= :maxPrice', { maxPrice: parseFloat(maxPrice) });
+        }
+
+        if (inStock === 'true' || inStock === true || inStock === '1') {
+            qb.andWhere('product.stockQty > 0');
+        }
+
         if (sort === 'price-low') {
-            order = { price: 'ASC' };
+            qb.orderBy('product.price', 'ASC');
         } else if (sort === 'price-high') {
-            order = { price: 'DESC' };
-        } else if (sort === 'newest') {
-            order = { createdAt: 'DESC' };
+            qb.orderBy('product.price', 'DESC');
+        } else {
+            qb.orderBy('product.createdAt', 'DESC');
         }
 
-        const products = await this.productRepository.find({
-            where,
-            order,
-        });
+        const products = await qb.getMany();
 
         return {
             success: true,

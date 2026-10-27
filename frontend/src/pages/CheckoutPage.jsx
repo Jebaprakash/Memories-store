@@ -56,26 +56,28 @@ export const CheckoutPage = () => {
 
     const validateForm = () => {
         if (!formData.name.trim()) {
-            toast.error('Please enter your name');
+            toast.error('Please enter your full name');
             return false;
         }
-        if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
             toast.error('Please enter a valid email address');
             return false;
         }
-        if (!formData.phone.trim() || formData.phone.length < 10) {
-            toast.error('Please enter a valid phone number');
+        const cleanPhone = formData.phone.replace(/[\s-]/g, '');
+        if (!cleanPhone || cleanPhone.length < 10 || !/^\d+$/.test(cleanPhone)) {
+            toast.error('Please enter a valid phone number (at least 10 digits)');
             return false;
         }
         if (!formData.address.trim()) {
-            toast.error('Please enter your address');
+            toast.error('Please enter your delivery street address');
             return false;
         }
         if (!formData.city.trim()) {
             toast.error('Please enter your city');
             return false;
         }
-        if (!formData.pincode.trim() || formData.pincode.length !== 6) {
+        const cleanPincode = formData.pincode.trim();
+        if (!cleanPincode || cleanPincode.length !== 6 || !/^\d{6}$/.test(cleanPincode)) {
             toast.error('Please enter a valid 6-digit pincode');
             return false;
         }
@@ -86,21 +88,28 @@ export const CheckoutPage = () => {
         return true;
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const placeOrder = async () => {
+        if (loading) return;
 
         if (!validateForm()) {
             return;
         }
 
         if (cartItems.length === 0) {
-            toast.error('Your cart is empty');
+            toast.error('Your bag is empty');
             return;
         }
 
-        if (paymentMethod === 'QR' && !showConfirmation) {
-            setShowConfirmation(true);
-            return;
+        // Validate stock and quantities locally before submitting
+        for (const item of cartItems) {
+            if (!item.quantity || item.quantity <= 0) {
+                toast.error(`Invalid quantity for ${item.name}`);
+                return;
+            }
+            if (item.stockQty !== undefined && item.quantity > item.stockQty) {
+                toast.error(`Only ${item.stockQty} unit(s) of ${item.name} available in stock. Please adjust your bag.`);
+                return;
+            }
         }
 
         setLoading(true);
@@ -110,8 +119,8 @@ export const CheckoutPage = () => {
                 id: item.id,
                 quantity: item.quantity,
                 name: item.name,
-                price: typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price,
-                image: item.images?.[0]
+                price: typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : Number(item.price),
+                image: item.images?.[0] || item.image_url || null,
             }));
 
             const payloadData = new FormData();
@@ -119,17 +128,16 @@ export const CheckoutPage = () => {
             payloadData.append('customer', JSON.stringify(formData));
             payloadData.append('totalAmount', total);
             payloadData.append('paymentMethod', paymentMethod);
-            
+
             if (paymentMethod === 'QR') {
                 payloadData.append('orderStatus', 'payment_submitted');
-            }
-
-            if (paymentMethod === 'QR' && screenshot) {
-                payloadData.append('screenshot', screenshot);
+                if (screenshot) {
+                    payloadData.append('screenshot', screenshot);
+                }
             }
 
             const res = await ordersAPI.create(payloadData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
 
             toast.success('Order placed successfully!');
@@ -137,11 +145,28 @@ export const CheckoutPage = () => {
             navigate(`/order-success/${res.data.data.id}`);
         } catch (error) {
             console.error('Error creating order:', error);
-            toast.error(error.response?.data?.message || 'Failed to place order');
+            const serverMsg = error.response?.data?.message;
+            toast.error(Array.isArray(serverMsg) ? serverMsg.join(', ') : serverMsg || 'Failed to place order');
         } finally {
             setLoading(false);
             setShowConfirmation(false);
         }
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (loading) return;
+
+        if (!validateForm()) {
+            return;
+        }
+
+        if (paymentMethod === 'QR') {
+            setShowConfirmation(true);
+            return;
+        }
+
+        placeOrder();
     };
 
     if (cartItems.length === 0) {
@@ -564,16 +589,13 @@ export const CheckoutPage = () => {
                                 <motion.button
                                     whileHover={{ y: -4 }}
                                     whileTap={{ scale: 0.98 }}
-                                    onClick={(e) => {
-                                        setShowConfirmation(false);
-                                        // Trigger handle submit again but this time with showConfirmation as true logic
-                                        // Wait, I already modified handleSubmit to handle this.
-                                        // I'll call handleSubmit directly but I need to pass event or mock it.
-                                        handleSubmit({ preventDefault: () => { } });
+                                    disabled={loading}
+                                    onClick={() => {
+                                        placeOrder();
                                     }}
-                                    className="w-full bg-slate-900 text-white rounded-2xl py-6 font-black text-xl tracking-wide shadow-xl shadow-slate-900/20"
+                                    className="w-full bg-slate-900 text-white rounded-2xl py-6 font-black text-xl tracking-wide shadow-xl shadow-slate-900/20 disabled:opacity-50"
                                 >
-                                    YES, I HAVE PAID
+                                    {loading ? 'Processing Order...' : 'YES, I HAVE PAID'}
                                 </motion.button>
                                 <motion.button
                                     whileHover={{ y: -2 }}

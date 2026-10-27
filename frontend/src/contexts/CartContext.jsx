@@ -26,46 +26,66 @@ export const CartProvider = ({ children }) => {
 
     // Save cart to localStorage whenever it changes
     useEffect(() => {
-        localStorage.setItem('cart', JSON.stringify(cartItems));
+        try {
+            localStorage.setItem('cart', JSON.stringify(cartItems));
+        } catch (error) {
+            console.error('Error saving cart to localStorage:', error);
+        }
     }, [cartItems]);
 
     const addToCart = (product, quantity = 1) => {
+        if (!product || !product.id) return;
+        const addQty = Math.max(1, parseInt(quantity, 10) || 1);
+
+        if (product.stockQty <= 0) {
+            toast.error(`${product.name} is currently out of stock`);
+            return;
+        }
+
         setCartItems((prevItems) => {
             const existingItem = prevItems.find((item) => item.id === product.id);
+            const parsedPrice = typeof product.price === 'string'
+                ? parseFloat(product.price.replace(/,/g, ''))
+                : Number(product.price || 0);
 
             if (existingItem) {
-                // Check if adding more would exceed stock
-                const newQty = existingItem.quantity + quantity;
+                const newQty = existingItem.quantity + addQty;
                 if (newQty > product.stockQty) {
-                    toast.error(`Only ${product.stockQty} items available in stock`);
+                    toast.error(`Only ${product.stockQty} item(s) available in stock`);
                     return prevItems;
                 }
 
-                toast.success('Cart updated!');
+                toast.success('Bag updated!');
                 return prevItems.map((item) =>
                     item.id === product.id
-                        ? { ...item, quantity: newQty }
+                        ? { ...item, quantity: newQty, price: parsedPrice, stockQty: product.stockQty }
                         : item
                 );
             } else {
-                if (quantity > product.stockQty) {
-                    toast.error(`Only ${product.stockQty} items available in stock`);
+                if (addQty > product.stockQty) {
+                    toast.error(`Only ${product.stockQty} item(s) available in stock`);
                     return prevItems;
                 }
 
-                toast.success('Added to cart!');
-                return [...prevItems, { ...product, quantity }];
+                toast.success('Added to bag!');
+                return [...prevItems, { ...product, price: parsedPrice, quantity: addQty }];
             }
         });
     };
 
     const removeFromCart = (productId) => {
-        setCartItems((prevItems) => prevItems.filter((item) => item.id !== productId));
-        toast.success('Removed from cart');
+        setCartItems((prevItems) => {
+            const item = prevItems.find((i) => i.id === productId);
+            if (item) {
+                toast.success(`${item.name} removed from bag`);
+            }
+            return prevItems.filter((i) => i.id !== productId);
+        });
     };
 
     const updateQuantity = (productId, quantity) => {
-        if (quantity < 1) {
+        const qty = parseInt(quantity, 10);
+        if (isNaN(qty) || qty < 1) {
             removeFromCart(productId);
             return;
         }
@@ -73,11 +93,11 @@ export const CartProvider = ({ children }) => {
         setCartItems((prevItems) =>
             prevItems.map((item) => {
                 if (item.id === productId) {
-                    if (quantity > item.stockQty) {
-                        toast.error(`Only ${item.stockQty} items available in stock`);
-                        return item;
+                    if (qty > item.stockQty) {
+                        toast.error(`Only ${item.stockQty} item(s) available in stock`);
+                        return { ...item, quantity: item.stockQty };
                     }
-                    return { ...item, quantity };
+                    return { ...item, quantity: qty };
                 }
                 return item;
             })
@@ -86,15 +106,19 @@ export const CartProvider = ({ children }) => {
 
     const clearCart = () => {
         setCartItems([]);
-        toast.success('Cart cleared');
     };
 
     const getCartTotal = () => {
-        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+        return cartItems.reduce((total, item) => {
+            const itemPrice = typeof item.price === 'string'
+                ? parseFloat(item.price.replace(/,/g, ''))
+                : Number(item.price || 0);
+            return total + itemPrice * item.quantity;
+        }, 0);
     };
 
     const getCartCount = () => {
-        return cartItems.reduce((count, item) => count + item.quantity, 0);
+        return cartItems.reduce((count, item) => count + (item.quantity || 0), 0);
     };
 
     const toggleCart = () => {
